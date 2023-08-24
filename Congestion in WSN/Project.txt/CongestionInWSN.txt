@@ -1,0 +1,124 @@
+% Define the network topology
+N = 20; % Number of nodes
+T = 5; % Threshold for congestion detection
+nodes = cell(N, 1);
+for i = 1:N
+    nodes{i}.id = i;
+    nodes{i}.isSink = false;
+    nodes{i}.neighbors = [];
+end
+nodes{1}.isSink = true;
+nodes{1}.neighbors = {[2, 5], [3, 10], [4, 15]};
+nodes{2}.neighbors = {[1, 5], [3, 5]};
+nodes{3}.neighbors = {[1, 10], [2, 5], [4, 5]};
+nodes{4}.neighbors = {[1, 15], [3, 5]};
+
+nodes{5}.neighbors = {[1, 20], [3, 10], [4, 15]};
+nodes{6}.neighbors = {[1, 25], [3, 5]};
+nodes{7}.neighbors = {[1, 30], [2, 5], [4, 5]};
+nodes{8}.neighbors = {[1, 35], [3, 5]};
+
+nodes{9}.neighbors = {[1, 40], [3, 10], [4, 15]};
+nodes{10}.neighbors = {[1, 45], [3, 5]};
+nodes{11}.neighbors = {[1, 50], [2, 5], [4, 5]};
+nodes{12}.neighbors = {[1, 55], [3, 5]};
+
+nodes{13}.neighbors = {[1, 5], [3, 10], [4, 15]};
+nodes{14}.neighbors = {[1, 15], [3, 5]};
+nodes{15}.neighbors = {[1, 20], [2, 5], [4, 5]};
+nodes{16}.neighbors = {[1, 25], [3, 5]};
+
+nodes{17}.neighbors = {[1, 5], [3, 10], [4, 15]};
+nodes{18}.neighbors = {[1, 5], [3, 5]};
+nodes{19}.neighbors = {[1, 10], [2, 5], [4, 5]};
+nodes{20}.neighbors = {[1, 15], [3, 5]};
+
+% Plotting the network topology
+figure;
+hold on;
+
+for i = 1:N
+    x = rand(); % x-coordinate of the node
+    y = rand(); % y-coordinate of the node
+    
+    for j = 1:length(nodes{i}.neighbors)
+        neighborNode = nodes{i}.neighbors{j}(1);
+        neighborWeight = nodes{i}.neighbors{j}(2);
+        
+        x_neighbor = rand(); % x-coordinate of the neighbor node
+        y_neighbor = rand(); % y-coordinate of the neighbor node
+        
+        % Plotting the link between nodes
+        %plot([x, x_neighbor], [y, y_neighbor], 'b');
+        %text((x + x_neighbor) / 2, (y + y_neighbor) / 2, num2str(neighborWeight), 'Color', 'b');
+    end
+    
+    % Plotting the node
+    if nodes{i}.isSink
+        plot(x, y, 'go', 'MarkerFaceColor', 'g'); % Green for the sink node
+    elseif congestedNode == i
+        plot(x, y, 'bo', 'MarkerFaceColor', 'b'); % Blue for the congested node
+    else
+        plot(x, y, 'ro', 'MarkerFaceColor', 'r'); % Red for other nodes
+    end
+    
+    text(x, y, num2str(nodes{i}.id), 'Color', 'k', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
+
+hold off;
+axis square;
+title('Wireless Sensor Network Topology');
+xlabel('X-coordinate');
+ylabel('Y-coordinate');
+
+% Detect congestion in the network
+[congestedNode, isCongested] = detectCongestion(nodes, T);
+
+% Display the result
+if isCongested
+    fprintf('Congestion detected at node %d.\n', congestedNode);
+else
+    fprintf('No congestion detected in the network.\n');
+end
+
+% Function to detect congestion in the network
+function [congestedNode, isCongested] = detectCongestion(nodes, T)
+    q = java.util.LinkedList(); % Create a queue using Java LinkedList
+    dist = Inf(1, length(nodes));
+    visited = false(1, length(nodes));
+    startNode = 1; % Start BFS from the sink node
+    q.add(startNode);
+    visited(startNode) = true;
+    dist(startNode) = 0;
+
+    % Run BFS to find the shortest path to each node from the sink node
+    while ~q.isEmpty()
+        currNode = q.remove();
+        visited(currNode) = false;
+
+        for j = 1:length(nodes{currNode}.neighbors)
+            neighborNode = nodes{currNode}.neighbors{j}(1);
+            neighborWeight = nodes{currNode}.neighbors{j}(2);
+
+            if dist(currNode) + neighborWeight < dist(neighborNode)
+                dist(neighborNode) = dist(currNode) + neighborWeight;
+
+                % If the new shortest path to this node is longer than the threshold T,
+                % then there is congestion in the network
+                if dist(neighborNode) > T
+                    congestedNode = neighborNode;
+                    isCongested = true;
+                    return;
+                end
+            end
+
+            if ~visited(neighborNode)
+                q.add(neighborNode);
+                visited(neighborNode) = true;
+            end
+        end
+    end
+
+    congestedNode = -1;
+    isCongested = false;
+end
